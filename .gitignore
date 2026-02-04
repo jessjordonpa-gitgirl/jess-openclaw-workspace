@@ -1,0 +1,36 @@
+# Sensitive personal data - NEVER commit
+MEMORY.md
+USER.md
+IDENTITY.md
+TOOLS.md
+memory/
+**/memory/
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.pid.lock
+
+# Env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temp files
+*.tmp
+*.temp

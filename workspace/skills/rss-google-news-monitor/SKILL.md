@@ -1,0 +1,3 @@
+---
+name: rss-google-news-monitor
+description: Monitor Google News via RSS feeds generated from search queries (e.g., q=AI+UFC, when:1d, hl=en-GB, gl=GB). Fetch/parse new articles, filter/summarise, notify via Telegram/email. Use for custom news alerts: 'monitor Google News for UFC tickets UK', 'RSS news on Wes Anderson 2026', 'check OpenClaw news'. Handles state (new since last), digests, cron setup.

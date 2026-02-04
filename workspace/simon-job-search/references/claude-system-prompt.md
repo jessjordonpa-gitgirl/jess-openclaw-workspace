@@ -1,0 +1,1 @@
+$(cat /Users/jessjordon/.openclaw/media/inbound/file_12---d09386f4-8d2b-4f31-8e33-ba77d2d35a3b.md)
