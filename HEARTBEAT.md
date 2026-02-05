@@ -7,6 +7,7 @@ git status → if changes: add . (respect gitignore), commit -m "Auto heartbeat:
 Set lastGit: $(date +%s)
 
 ## Rotate Other Checks (skip if <2h since last)
+- OpenClaw news: check for mentions/releases/updates once per hour → summarize (web_search)
 - Emails: unread urgent? (gog)
 - Calendar: next 24h events?
 - Weather: relevant forecast in Guildford, Surrey (GU13 8QY)?
