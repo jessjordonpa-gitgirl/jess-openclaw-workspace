@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "skills": {
+    "token-optimizer": {
+      "version": "1.0.7",
+      "installedAt": 1770378347199
+    },
+    "smart-model-switching": {
+      "version": "1.0.0",
+      "installedAt": 1770378353247
+    },
+    "personal-crm": {
+      "version": "1.1.0",
+      "installedAt": 1770378357302
+    },
+    "shell-scripting": {
+      "version": "1.0.0",
+      "installedAt": 1770378363960
+    },
+    "cron-scheduling": {
+      "version": "1.0.0",
+      "installedAt": 1770378368323
+    },
+    "data-validation": {
+      "version": "1.0.0",
+      "installedAt": 1770378373789
+    },
+    "encoding-formats": {
+      "version": "1.0.0",
+      "installedAt": 1770378388228
+    },
+    "regex-patterns": {
+      "version": "1.0.0",
+      "installedAt": 1770378390756
+    },
+    "cli-developer": {
+      "version": "0.1.0",
+      "installedAt": 1770378393273
+    },
+    "codebase-documenter": {
+      "version": "0.1.0",
+      "installedAt": 1770378395881
+    },
+    "oauth-helper": {
+      "version": "1.1.0",
+      "installedAt": 1770378398288
+    },
+    "research-cog": {
+      "version": "1.0.1",
+      "installedAt": 1770378439612
+    },
+    "search-1-0-0": {
+      "version": "1.0.0",
+      "installedAt": 1770378441680
+    },
+    "startups": {
+      "version": "1.0.0",
+      "installedAt": 1770378443561
+    },
+    "deep-scraper": {
+      "version": "1.0.1",
+      "installedAt": 1770378445611
+    },
+    "playwright-cli-2": {
+      "version": "0.1.0",
+      "installedAt": 1770378447625
+    },
+    "youtube-api-skill": {
+      "version": "1.0.1",
+      "installedAt": 1770378453661
+    },
+    "vector-memory-hack": {
+      "version": "1.0.3",
+      "installedAt": 1770378455511
+    },
+    "hippocampus-memory": {
+      "version": "3.8.6",
+      "installedAt": 1770378458637
+    },
+    "prompt-rewriter": {
+      "version": "1.0.0",
+      "installedAt": 1770378460419
+    },
+    "self-evolving-skill": {
+      "version": "1.0.2",
+      "installedAt": 1770378475891
+    },
+    "ralph-evolver": {
+      "version": "1.0.6",
+      "installedAt": 1770378477835
+    },
+    "agentchat": {
+      "version": "0.14.0",
+      "installedAt": 1770378482393
+    },
+    "whisper": {
+      "version": "1.0.0",
+      "installedAt": 1770378484170
+    },
+    "noopolis": {
+      "version": "0.0.1",
+      "installedAt": 1770378486311
+    },
+    "moltchurch": {
+      "version": "1.0.0",
+      "installedAt": 1770378495646
+    },
+    "openclaw-deploy": {
+      "version": "1.0.2",
+      "installedAt": 1770378498008
+    },
+    "remarkable-tablet": {
+      "version": "1.0.0",
+      "installedAt": 1770378499682
+    }
+  }
+}
