@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  openclaw:
+    build: .
+    container_name: openclaw-gateway
+    ports:
+      - "18789:18789"  # Control UI
+      - "2222:22"      # SSH (mapped to avoid host SSH conflicts)
+    volumes:
+      - openclaw-data:/home/openclaw/.openclaw
+      - ./ssh-keys:/root/.ssh  # For SSH access
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+volumes:
+  openclaw-data:
+    driver: local
