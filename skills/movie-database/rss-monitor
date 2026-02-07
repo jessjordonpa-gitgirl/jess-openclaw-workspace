@@ -1,0 +1,188 @@
+#!/bin/bash
+
+# RSS Feed Monitor for Movie Releases
+# Monitors entertainment industry feeds and alerts for new releases from favorite directors
+
+# Configuration
+RSS_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LOG_FILE="$RSS_SCRIPT_DIR/rss-monitor.log"
+ALERT_CHANNEL="telegram"  # For notifications
+FREQUENCY_MINUTES="${FREQUENCY_MINUTES:-60}"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Your favorite directors
+DIRECTORS=("Wes Anderson" "Christopher Nolan" "Denis Villeneuve" "David Fincher" "Martin Scorsese")
+A24_DIRECTORS=("Daniels" "Celine Song" "Alexander Payne")
+
+# Entertainment feeds
+RSS_FEEDS=(
+    "https://variety.com/feed/"
+    "https://deadline.com/feed/"
+    "https://www.indiewire.com/category/news/feed/"
+    "https://www.thefilmstage.com/feed/"
+    "https://www.empireonline.com/news/feed/"
+)
+
+# Log function
+log() {
+    local level="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
+}
+
+# Send alert
+send_alert() {
+    local message="$1"
+    log "ALERT" "$message"
+
+    # Optional: Uncomment to send via Telegram
+    # send_to_telegram "$message"
+}
+
+# Check if content is recent (within last $FREQUENCY_MINUTES)
+is_recent() {
+    local file="$1"
+    local minutes=$2
+
+    if [ -f "$file" ]; then
+        local file_age=$(( ( $(date +%s) - $(stat -f %m "$file") ) / 60 ))
+        if [ $file_age -le $minutes ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Parse RSS and extract headlines
+parse_rss() {
+    local feed_url="$1"
+    local content=$(curl -s "$feed_url")
+
+    echo "$content" | grep -oP '<title><!\[CDATA\[([^]]+)\]\]</title>' | sed 's/<!\[CDATA\[//;s/\]\]//' | head -20
+}
+
+# Monitor a single feed
+monitor_feed() {
+    local feed="$1"
+    local feed_name="${feed##*/}"
+
+    echo -e "${CYAN}📡 Checking: ${feed_name}${NC}"
+
+    local content=$(curl -s "$feed" 2>/dev/null)
+
+    if [ -z "$content" ]; then
+        echo -e "   ${YELLOW}⚠️  Could not fetch feed${NC}"
+        return
+    fi
+
+    # Parse and check for relevant content
+    echo "$content" | grep -oP '<title><!\[CDATA\[([^]]+)\]\]</title>' | sed 's/<!\[CDATA\[//;s/\]\]//' | while IFS= read -r headline; do
+        # Check for your favorite directors
+        for director in "${DIRECTORS[@]}"; do
+            if echo "$headline" | grep -qi "$director"; then
+                send_alert "🎬 **New: ${director} News**\nHeadline: $headline\nFeed: $feed_name"
+                break
+            fi
+        done
+
+        # Check for A24
+        for a24_dir in "${A24_DIRECTORS[@]}"; do
+            if echo "$headline" | grep -qi "$a24_dir"; then
+                send_alert "💎 **A24: ${a24_dir} Updates**\nHeadline: $headline"
+                break
+            fi
+        done
+    done
+}
+
+# Main monitoring loop
+monitor_feeds() {
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🎬 RSS Feed Monitor Started${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    log "INFO" "Monitoring started"
+
+    # Monitor all feeds
+    for feed in "${RSS_FEEDS[@]}"; do
+        monitor_feed "$feed"
+    done
+
+    echo ""
+    echo -e "${GREEN}✅ Feed monitoring complete${NC}"
+    log "INFO" "Feed monitoring complete"
+}
+
+# One-time check
+one_time_check() {
+    monitor_feeds
+}
+
+# Continuous monitoring
+continuous_monitor() {
+    while true; do
+        monitor_feeds
+        sleep $((FREQUENCY_MINUTES * 60))
+    done
+}
+
+# Show usage
+show_usage() {
+    echo "RSS Feed Monitor for Movie Releases"
+    echo ""
+    echo "Usage: rss-monitor [command]"
+    echo ""
+    echo "Commands:"
+    echo "  one        Run one check now"
+    echo "  status     Show monitoring status"
+    echo "  logs       Show recent logs"
+    echo "  watch      Start continuous monitoring (default: every 60 minutes)"
+    echo "  help       Show this message"
+    echo ""
+}
+
+# Main dispatcher
+case "${1:-}" in
+    one)
+        one_time_check
+        ;;
+    status)
+        echo "RSS Monitor Status"
+        echo "---"
+        echo "Last run: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "Log file: $LOG_FILE"
+
+        if [ -f "$LOG_FILE" ]; then
+            echo ""
+            echo "Recent alerts:"
+            tail -n 5 "$LOG_FILE" | grep "ALERT"
+        fi
+        ;;
+    logs)
+        if [ -f "$LOG_FILE" ]; then
+            tail -n 20 "$LOG_FILE"
+        else
+            echo "No logs yet"
+        fi
+        ;;
+    watch)
+        echo -e "${CYAN}Starting continuous monitoring...${NC}"
+        echo "Press Ctrl+C to stop"
+        continuous_monitor
+        ;;
+    help|--help|-h)
+        show_usage
+        ;;
+    *)
+        one_time_check
+        ;;
+esac

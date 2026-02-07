@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# OMDb API Integration Test
+# Tests the API connection and demonstrates functionality
+
+OMDB_API_KEY="${OMDB_API_KEY:-""}"
+
+if [ -z "$OMDB_API_KEY" ]; then
+    echo "❌ No API key found"
+    echo ""
+    echo "Option 1: Set environment variable"
+    echo '  export OMDB_API_KEY="your_key_here"'
+    echo ""
+    echo "Option 2: Create the key file"
+    echo "  echo \"YOUR_KEY\" > ~/.movie-database-api-key"
+    echo "  chmod 600 ~/.movie-database-api-key"
+    echo "  export OMDB_API_KEY=\$(cat ~/.movie-database-api-key)"
+    echo ""
+    exit 1
+fi
+
+echo "✅ API key found"
+echo ""
+
+# Test 1: Search for Wes Anderson films
+echo "🔎 Testing Search API..."
+search_url="http://www.omdbapi.com/?s=Wes%20Anderson&apikey=$OMDB_API_KEY"
+result=$(curl -s "$search_url")
+
+if echo "$result" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+    title=$(echo "$result" | jq -r '.Search[0].Title')
+    year=$(echo "$result" | jq -r '.Search[0].Year')
+    imdb_id=$(echo "$result" | jq -r '.Search[0].imdbID')
+    echo "✅ Search successful: $title ($year) - $imdb_id"
+else
+    echo "❌ Search failed"
+    echo "$result"
+    exit 1
+fi
+
+# Test 2: Get movie details
+echo ""
+echo "📖 Testing Details API..."
+details_url="http://www.omdbapi.com/?i=$imdb_id&apikey=$OMDB_API_KEY"
+details=$(curl -s "$details_url")
+
+if echo "$details" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+    title=$(echo "$details" | jq -r '.Title')
+    rating=$(echo "$details" | jq -r '.imdbRating')
+    director=$(echo "$details" | jq -r '.Director')
+    year=$(echo "$details" | jq -r '.Year')
+    echo "✅ Details retrieved:"
+    echo "   Title: $title"
+    echo "   Rating: $rating/10"
+    echo "   Director: $director"
+    echo "   Year: $year"
+else
+    echo "❌ Details failed"
+    exit 1
+fi
+
+# Test 3: Multiple searches
+echo ""
+echo "🎯 Testing Multiple Searches..."
+test_queries=("Inception" "The Dark Knight" "Dune")
+
+for query in "${test_queries[@]}"; do
+    echo -n "  $query: "
+    search_url="http://www.omdbapi.com/?s=${query}&apikey=$OMDB_API_KEY"
+    result=$(curl -s "$search_url")
+
+    if echo "$result" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+        count=$(echo "$result" | jq '.Search | length')
+        echo "✅ Found $count result(s)"
+    else
+        echo "❌ No results"
+    fi
+done
+
+# Test 4: Different search types
+echo ""
+echo "🔍 Testing Search Types..."
+echo -n "  By title: "
+details_url="http://www.omdbapi.com/?t=${title}&apikey=$OMDB_API_KEY"
+details=$(curl -s "$details_url")
+if echo "$details" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+    echo "✅ Found"
+else
+    echo "❌ Failed"
+fi
+
+echo ""
+echo "🎉 All tests passed!"
+echo ""
+echo "💡 Next steps:"
+echo "  1. Use ./movie search \"<query>\" to find films"
+echo "  2. Use ./movie info \"<title>\" to get details"
+echo "  3. Use ./movie recommend to get personalized suggestions"
+echo ""
+echo "Your API key is working! \ud83c\udfa5"

@@ -1,0 +1,1 @@
+[["YOUR_OMDB_API_KEY_HERE"]]

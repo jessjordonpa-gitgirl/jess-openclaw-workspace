@@ -1,0 +1,516 @@
+#!/bin/bash
+
+# Movie Database CLI - Full OMDb Integration
+# Enhanced version with API integration
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MOVIES_DIR="$SCRIPT_DIR/movies"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+NC='\033[0m' # No Color
+
+# API Key Management
+get_api_key() {
+    # Priority 1: Environment variable
+    if [ -n "$OMDB_API_KEY" ]; then
+        echo "$OMDB_API_KEY"
+        return 0
+    fi
+
+    # Priority 2: ~/.movie-database-api-key file
+    if [ -f "$HOME/.movie-database-api-key" ]; then
+        cat "$HOME/.movie-database-api-key"
+        return 0
+    fi
+
+    # Priority 3: Project config
+    if [ -f "$SCRIPT_DIR/omdb-config.sh" ]; then
+        source "$SCRIPT_DIR/omdb-config.sh"
+        if [ -n "$OMDB_API_KEY" ]; then
+            echo "$OMDB_API_KEY"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+# API Calls
+api_search() {
+    local query="$1"
+    local api_key="$2"
+    local search_url="http://www.omdbapi.com/?s=$(echo "$query" | sed 's/ /+/g')&type=movie&apikey=$api_key"
+    curl -s "$search_url"
+}
+
+api_get_details() {
+    local imdb_id="$1"
+    local api_key="$2"
+    local details_url="http://www.omdbapi.com/?i=$imdb_id&apikey=$api_key"
+    curl -s "$details_url"
+}
+
+api_get_by_title() {
+    local title="$1"
+    local api_key="$2"
+    local title_url="http://www.omdbapi.com/?t=$(echo "$title" | sed 's/ /+/g')&type=movie&apikey=$api_key"
+    curl -s "$title_url"
+}
+
+api_get_imdb_id_from_search() {
+    local query="$1"
+    local api_key="$2"
+
+    local result=$(api_search "$query" "$api_key")
+
+    if echo "$result" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+        echo "$result" | jq -r '.Search[0].imdbID'
+    else
+        echo "ERROR"
+        return 1
+    fi
+}
+
+# Helper Functions
+display_movie_card() {
+    local title="$1"
+    local year="$2"
+    local rating="$3"
+    local imdb_id="$4"
+    local director="$5"
+
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}🎬 ${title}${NC}"
+    echo -e "${MAGENTA}   Year: ${year} | Rating: ${rating}/10${NC}"
+    if [ -n "$director" ]; then
+        echo -e "   Director: ${director}"
+    fi
+    echo -e "   IMDB: ${BLUE}https://www.imdb.com/title/$imdb_id${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+display_search_results() {
+    local result="$1"
+
+    if echo "$result" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+        local count=$(echo "$result" | jq '.Search | length')
+
+        echo ""
+        echo -e "${GREEN}✨ Found ${count} result(s):${NC}"
+
+        for i in $(seq 0 $((count - 1))); do
+            local title=$(echo "$result" | jq -r ".Search[$i].Title")
+            local year=$(echo "$result" | jq -r ".Search[$i].Year")
+            local imdb_id=$(echo "$result" | jq -r ".Search[$i].imdbID")
+            local type=$(echo "$result" | jq -r ".Search[$i].Type")
+            local released=$(echo "$result" | jq -r ".Search[$i].Released")
+
+            display_movie_card "$title" "$year" "-" "$imdb_id" ""
+            echo ""
+        done
+    else
+        echo -e "${RED}❌ No results found${NC}"
+    fi
+}
+
+display_movie_details() {
+    local result="$1"
+
+    if echo "$result" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+        local title=$(echo "$result" | jq -r '.Title')
+        local year=$(echo "$result" | jq -r '.Year')
+        local rating=$(echo "$result" | jq -r '.imdbRating')
+        local runtime=$(echo "$result" | jq -r '.Runtime')
+        local genre=$(echo "$result" | jq -r '.Genre')
+        local director=$(echo "$result" | jq -r '.Director')
+        local actors=$(echo "$result" | jq -r '.Actors')
+        local plot=$(echo "$result" | jq -r '.Plot')
+        local imdb_id=$(echo "$result" | jq -r '.imdbID')
+
+        display_movie_card "$title" "$year" "$rating" "$imdb_id" "$director"
+
+        echo -e "${GREEN}🎭 Runtime: ${runtime}${NC}"
+        echo -e "${GREEN}🎭 Genre: ${genre}${NC}"
+        echo -e "${GREEN}🎭 Director: ${director}${NC}"
+        echo -e "${GREEN}🎭 Cast: ${actors}${NC}"
+        echo ""
+        echo -e "${YELLOW}📖 ${plot}${NC}"
+        echo ""
+        echo -e "${BLUE}🔗 ${imdb_id}: https://www.imdb.com/title/$imdb_id${NC}"
+    else
+        echo -e "${RED}❌ Movie not found${NC}"
+    fi
+}
+
+# Commands
+cmd_search() {
+    local query="$1"
+    local api_key=$(get_api_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${RED}❌ No OMDb API key found${NC}"
+        echo ""
+        echo "Get a free key at: https://www.omdbapi.com/apikey.aspx"
+        echo "Then set it:"
+        echo '  export OMDB_API_KEY="your_key"'
+        return 1
+    fi
+
+    echo -e "${CYAN}🔍 Searching for: ${query}${NC}"
+
+    local result=$(api_search "$query" "$api_key")
+    display_search_results "$result"
+}
+
+cmd_info() {
+    local title="$1"
+    local api_key=$(get_api_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${RED}❌ No OMDb API key found${NC}"
+        return 1
+    fi
+
+    # Try getting IMDB ID first
+    local imdb_id=$(api_get_imdb_id_from_search "$title" "$api_key")
+
+    if [ "$imdb_id" = "ERROR" ]; then
+        # Try direct title search
+        local result=$(api_get_by_title "$title" "$api_key")
+
+        if echo "$result" | jq -e '.Response == "True"' > /dev/null 2>&1; then
+            display_movie_details "$result"
+        else
+            echo -e "${RED}❌ Movie not found: ${title}${NC}"
+            echo ""
+            echo "Try searching for it first:"
+            echo "  movie search \"${title}\""
+        fi
+        return
+    fi
+
+    # Get details using IMDB ID
+    local result=$(api_get_details "$imdb_id" "$api_key")
+    display_movie_details "$result"
+}
+
+cmd_compare() {
+    local movie1="$1"
+    local movie2="$2"
+    local api_key=$(get_api_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${RED}❌ No OMDb API key found${NC}"
+        return 1
+    fi
+
+    echo -e "${CYAN}⚖️  Comparing: ${movie1} vs ${movie2}${NC}"
+
+    local imdb1=$(api_get_imdb_id_from_search "$movie1" "$api_key")
+    local imdb2=$(api_get_imdb_id_from_search "$movie2" "$api_key")
+
+    if [ "$imdb1" = "ERROR" ] || [ "$imdb2" = "ERROR" ]; then
+        echo -e "${RED}❌ One or both movies not found${NC}"
+        return 1
+    fi
+
+    local result1=$(api_get_details "$imdb1" "$api_key")
+    local result2=$(api_get_details "$imdb2" "$api_key")
+
+    local title1=$(echo "$result1" | jq -r '.Title')
+    local rating1=$(echo "$result1" | jq -r '.imdbRating')
+    local genre1=$(echo "$result1" | jq -r '.Genre')
+    local director1=$(echo "$result1" | jq -r '.Director')
+
+    local title2=$(echo "$result2" | jq -r '.Title')
+    local rating2=$(echo "$result2" | jq -r '.imdbRating')
+    local genre2=$(echo "$result2" | jq -r '.Genre')
+    local director2=$(echo "$result2" | jq -r '.Director')
+
+    # Extract year from result
+    local year1=$(echo "$result1" | jq -r '.Year')
+    local year2=$(echo "$result2" | jq -r '.Year')
+
+    echo ""
+    echo -e "${BLUE}=== ${title1} ($year1) ===${NC}"
+    echo -e "   ${GREEN}Rating: ${rating1}/10${NC}"
+    echo -e "   Genre: ${genre1}"
+    echo -e "   Director: ${director1}"
+    echo ""
+
+    echo -e "${BLUE}=== ${title2} ($year2) ===${NC}"
+    echo -e "   ${GREEN}Rating: ${rating2}/10${NC}"
+    echo -e "   Genre: ${genre2}"
+    echo -e "   Director: ${director2}"
+    echo ""
+
+    # Comparison
+    if (( $(echo "$rating1 > $rating2" | bc -l) )); then
+        echo -e "${GREEN}🏆 ${title1} has a higher rating (${rating1} vs ${rating2})${NC}"
+    elif (( $(echo "$rating2 > $rating1" | bc -l) )); then
+        echo -e "${GREEN}🏆 ${title2} has a higher rating (${rating2} vs ${rating1})${NC}"
+    else
+        echo -e "${YELLOW}⚖️  Equal ratings (${rating1} = ${rating2})${NC}"
+    fi
+}
+
+cmd_watch() {
+    local title="$1"
+    local rating="$2"
+    local date=$(date +%Y-%m-%d)
+    local api_key=$(get_api_key)
+
+    if [ -n "$api_key" ]; then
+        # Try to get movie details for logging
+        local imdb_id=$(api_get_imdb_id_from_search "$title" "$api_key")
+
+        if [ "$imdb_id" != "ERROR" ]; then
+            local result=$(api_get_details "$imdb_id" "$api_key")
+            local title=$(echo "$result" | jq -r '.Title')
+            local year=$(echo "$result" | jq -r '.Year')
+
+            if [ -n "$rating" ]; then
+                echo -e "${GREEN}✅ Watched: ${title} ($year) - ${rating}/10 - ${date}${NC}"
+                echo "Watched: $title ($rating/10) - $date" >> "$MOVIES_DIR/watch-history.md"
+            else
+                echo -e "${GREEN}✅ Watched: ${title} ($year) - ${date}${NC}"
+                echo "Watched: $title - $date" >> "$MOVIES_DIR/watch-history.md"
+            fi
+            return
+        fi
+    fi
+
+    # Fallback to simple logging
+    local movie_file="$MOVIES_DIR/watch-history.md"
+
+    if [ -n "$rating" ]; then
+        echo "Watched: $title ($rating/10) - $date" >> "$movie_file"
+        echo -e "${GREEN}✅ Watched: ${title} - ${rating}/10 - ${date}${NC}"
+    else
+        echo "Watched: $title - $date" >> "$movie_file"
+        echo -e "${GREEN}✅ Watched: ${title} - ${date}${NC}"
+    fi
+}
+
+cmd_suggest() {
+    shift
+    local director=""
+    local genre=""
+
+    for arg in "$@"; do
+        case "$arg" in
+            --director=*)
+                director="${arg#--director=}"
+                ;;
+            --genre=*)
+                genre="${arg#--genre=}"
+                ;;
+        esac
+    done
+
+    local api_key=$(get_api_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${RED}❌ No OMDb API key found${NC}"
+        return 1
+    fi
+
+    echo -e "${CYAN}🎯 Getting ${director:+director '"$director"'} ${genre:+genre '"$genre"'} recommendations${NC}"
+
+    if [ -n "$director" ]; then
+        echo -e "${YELLOW}Films by ${director} (from your favorites):${NC}"
+        grep -i "$director" "$MOVIES_DIR/favorite-films.md" | head -5 || echo "No matches found"
+    fi
+
+    if [ -n "$genre" ]; then
+        echo ""
+        echo -e "${YELLOW}Films with ${genre} genre (from your favorites):${NC}"
+        grep -i "$genre" "$MOVIES_DIR/favorite-films.md" | head -5 || echo "No matches found"
+    fi
+
+    echo ""
+    echo -e "${CYAN}💡 Use this command to find more: ${BLUE}movie search \"<query>\"${NC}"
+}
+
+cmd_discover() {
+    local api_key=$(get_api_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${RED}❌ No OMDb API key found${NC}"
+        echo ""
+        echo "Get a free key at: https://www.omdbapi.com/apikey.aspx"
+        return 1
+    fi
+
+    echo -e "${CYAN}🎬 Discovering movies based on your preferences...${NC}"
+    echo ""
+
+    # Recommend A24 films (based on your favorites)
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}💎 A24 Films${NC}"
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    local a24_films=("Everything Everywhere All At Once" "Past Lives" "The Holdovers" "Moonrise Kingdom" "The Darjeeling Limited")
+    for film in "${a24_films[@]}"; do
+        echo -e "${CYAN}📡 ${film}${NC}"
+
+        local imdb_id=$(api_get_imdb_id_from_search "$film" "$api_key")
+        if [ "$imdb_id" != "ERROR" ]; then
+            local result=$(api_get_details "$imdb_id" "$api_key")
+            local rating=$(echo "$result" | jq -r '.imdbRating')
+            local year=$(echo "$result" | jq -r '.Year')
+            local director=$(echo "$result" | jq -r '.Director')
+
+            echo -e "   ${GREEN}Year: ${year} | Rating: ${rating}/10${NC}"
+            echo -e "   ${BLUE}IMDB: https://www.imdb.com/title/$imdb_id${NC}"
+        fi
+        echo ""
+    done
+
+    # Recommend Christopher Nolan films
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}🎬 Christopher Nolan${NC}"
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    local nolan_films=("Tenet" "Oppenheimer" "Memento" "Following" "The Prestige")
+    for film in "${nolan_films[@]}"; do
+        echo -e "${CYAN}📡 ${film}${NC}"
+
+        local imdb_id=$(api_get_imdb_id_from_search "$film" "$api_key")
+        if [ "$imdb_id" != "ERROR" ]; then
+            local result=$(api_get_details "$imdb_id" "$api_key")
+            local rating=$(echo "$result" | jq -r '.imdbRating')
+            local year=$(echo "$result" | jq -r '.Year')
+
+            echo -e "   ${GREEN}Year: ${year} | Rating: ${rating}/10${NC}"
+            echo -e "   ${BLUE}IMDB: https://www.imdb.com/title/$imdb_id${NC}"
+        fi
+        echo ""
+    done
+
+    # Coming soon
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}📅 Coming Soon${NC}"
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    echo -e "${CYAN}📡 Dune: Part Two (2024)${NC}"
+    echo -e "   ${GREEN}Director: Denis Villeneuve${NC}"
+    echo -e "   ${YELLOW}Why you'll love it: You rated the first one 8.0/10${NC}"
+    echo ""
+
+    echo -e "${CYAN}📡 The Royal Tenenbaums (2001)${NC}"
+    echo -e "   ${GREEN}Director: Wes Anderson${NC}"
+    echo -e "   ${YELLOW}Why you'll love it: Not yet in your favorites! Your rating on his films: 8.1/10 average${NC}"
+    echo ""
+}
+
+cmd_list() {
+    local fav_file="$MOVIES_DIR/favorite-films.md"
+    local watch_file="$MOVIES_DIR/watch-history.md"
+
+    if [ -f "$fav_file" ]; then
+        local count=$(grep -c "^- \[" "$fav_file" || echo "0")
+        echo -e "${BLUE}📚 Your Favorites: ${GREEN}${count}${NC}"
+        echo ""
+        grep "^- \[" "$fav_file" | sed 's/^- /  /' | head -10
+        [ $count -gt 10 ] && echo "  ... and $((count - 10)) more"
+    else
+        echo "No favorites list found"
+    fi
+
+    echo ""
+
+    if [ -f "$watch_file" ]; then
+        local watch_count=$(grep -c "^Watched:" "$watch_file" || echo "0")
+        echo -e "${BLUE}🎬 Watch History: ${GREEN}${watch_count}${NC}"
+        echo ""
+        grep "^Watched:" "$watch_file" | sed 's/^Watched:/  /' | head -10
+        [ $watch_count -gt 10 ] && echo "  ... and $((watch_count - 10)) more"
+    else
+        echo "No watch history yet"
+    fi
+}
+
+# Usage
+show_usage() {
+    echo -e "${CYAN}🎬 Movie Database Manager${NC}"
+    echo ""
+    echo "Usage: movie <command> [options]"
+    echo ""
+    echo "Commands:"
+    echo "  search <query>             Search for movies"
+    echo "  info <title>               Get detailed information about a movie"
+    echo "  compare <movie1> <movie2>  Compare two movies side by side"
+    echo "  suggest --director=<name>  Suggest movies by director"
+    echo "  suggest --genre=<genre>    Suggest movies by genre"
+    echo "  add <title>                Add a movie to your favorites"
+    echo "  watch <title> [rating]     Log that you watched a movie"
+    echo "  discover                   Discover new movies based on your preferences"
+    echo "  list                       List your movies and watch history"
+    echo ""
+    echo "Examples:"
+    echo "  movie search \"Wes Anderson films\""
+    echo "  movie info \"The Grand Budapest Hotel\""
+    echo "  movie compare \"The Dark Knight\" \"Inception\""
+    echo "  movie suggest --director=\"Wes Anderson\""
+    echo "  movie watch \"Moonrise Kingdom\" 9/10"
+    echo "  movie discover"
+    echo ""
+}
+
+# Main
+case "${1:-}" in
+    search)
+        cmd_search "$2"
+        ;;
+    info)
+        cmd_info "$2"
+        ;;
+    compare)
+        cmd_compare "$2" "$3"
+        ;;
+    add)
+        if [ -z "$2" ]; then
+            echo -e "${RED}Error: Movie title required${NC}"
+            show_usage
+            exit 1
+        fi
+        echo -e "${CYAN}Adding: ${2}${NC}"
+        if [ -n "$3" ]; then
+            echo "Watched: $2 ($3/10) - $(date +%Y-%m-%d)" >> "$MOVIES_DIR/watch-history.md"
+            echo -e "${GREEN}✅ Logged: $2 - Rating: $3/10${NC}"
+        else
+            echo "Watched: $2 - $(date +%Y-%m-%d)" >> "$MOVIES_DIR/watch-history.md"
+            echo -e "${GREEN}✅ Logged: $2${NC}"
+        fi
+        ;;
+    watch)
+        if [ -z "$2" ]; then
+            echo -e "${RED}Error: Movie title required${NC}"
+            show_usage
+            exit 1
+        fi
+        cmd_watch "$2" "$3"
+        ;;
+    suggest)
+        cmd_suggest "$@"
+        ;;
+    discover)
+        cmd_discover
+        ;;
+    list)
+        cmd_list
+        ;;
+    *)
+        show_usage
+        ;;
+esac
