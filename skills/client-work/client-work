@@ -1,0 +1,260 @@
+#!/bin/bash
+
+# Client Work Manager
+# Usage: client-work <command> [options]
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CLIENT_WORK_DIR="$SCRIPT_DIR/client-work"
+INDEX_FILE="$CLIENT_WORK_DIR/index.md"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to get list of clients
+get_clients() {
+    ls -1 "$CLIENT_WORK_DIR"/*.md 2>/dev/null | sed 's|.*client-work/||' | sed 's|.md||' | sort
+}
+
+# Function to add a client
+add_client() {
+    local client_name="$1"
+    if [ -z "$client_name" ]; then
+        echo -e "${RED}Error: Client name required${NC}"
+        echo "Usage: client-work add-client <client-name>"
+        exit 1
+    fi
+
+    if [ -f "$CLIENT_WORK_DIR/$client_name.md" ]; then
+        echo -e "${YELLOW}Client '$client_name' already exists${NC}"
+        return 1
+    fi
+
+    local description="${2:-Client work for $client_name}"
+    local today=$(date +%Y-%m-%d)
+
+    cat > "$CLIENT_WORK_DIR/$client_name.md" << EOF
+# Client: $client_name
+
+## 2026-02-07 (today)
+- **Duration:** --:--
+- **Time Allocated:** 0%
+
+### Tasks Completed
+- [ ] Set up project tracking
+
+### Findings & Notes
+-
+
+### Future Todos
+-
+
+### Project Timeline Updates
+-
+
+EOF
+
+    # Add to index
+    if [ -f "$INDEX_FILE" ]; then
+        # Extract existing client entries
+        sed -i.bak '/^## Clients$/,/^## Quick Stats$/d' "$INDEX_FILE"
+        rm -f "$INDEX_FILE.bak"
+
+        # Add new entry
+        sed -i "" '/^## Quick Stats$/i\
+\
+## Clients\
+### $client_name\
+- **Description:** $description\
+- **Last Activity:** Today\
+' "$INDEX_FILE"
+    fi
+
+    echo -e "${GREEN}✓ Client '$client_name' created${NC}"
+    echo "Open $CLIENT_WORK_DIR/$client_name.md to start logging work"
+}
+
+# Function to add daily entry
+add_entry() {
+    local client_name="$1"
+    local duration="$2"
+    local description="$3"
+
+    if [ -z "$client_name" ]; then
+        echo -e "${RED}Error: Client name required${NC}"
+        echo "Usage: client-work <client-name> add <duration> \"description\""
+        exit 1
+    fi
+
+    if [ -z "$duration" ]; then
+        echo -e "${RED}Error: Duration required${NC}"
+        echo "Usage: client-work <client-name> add <duration> \"description\""
+        exit 1
+    fi
+
+    local client_file="$CLIENT_WORK_DIR/$client_name.md"
+    if [ ! -f "$client_file" ]; then
+        echo -e "${RED}Error: Client '$client_name' not found${NC}"
+        exit 1
+    fi
+
+    local today=$(date +%Y-%m-%d)
+
+    # Check if entry already exists for today
+    if grep -q "## $today" "$client_file"; then
+        echo -e "${YELLOW}Entry for today already exists${NC}"
+        exit 0
+    fi
+
+    # Calculate time allocated (assuming 8-hour workday)
+    local hours=$(echo "$duration" | awk -F: '{print $1}')
+    local minutes=$(echo "$duration" | awk -F: '{print $2}')
+    local total_minutes=$(echo "$hours*60 + minutes" | bc)
+    local allocated_percent=$((total_minutes * 100 / 480))  # 480 minutes = 8 hours
+
+    # Get current time for "Today" section
+    local current_time=$(date +%H:%M)
+
+    # Insert new entry after the last date section
+    sed -i.bak '/^## $today$/i\
+## $today\
+- **Duration:** $duration\
+- **Time Allocated:** $allocated_percent%\
+- **Current Time:** $current_time\
+\
+### Tasks Completed\
+- [ ] Add task entries\
+\
+### Findings & Notes\
+-
+\
+### Future Todos\
+-
+\
+### Project Timeline Updates\
+-\
+' "$client_file"
+
+    rm -f "$client_file.bak"
+
+    # Update index
+    if [ -f "$INDEX_FILE" ]; then
+        sed -i '' "s|**Last Activity:** .*|**Last Activity:** Today ($current_time)|" "$INDEX_FILE"
+    fi
+
+    echo -e "${GREEN}✓ Entry added for $client_name ($duration): $description${NC}"
+}
+
+# Function to list clients
+list_clients() {
+    echo -e "${BLUE}Registered Clients:${NC}\n"
+
+    if [ ! -d "$CLIENT_WORK_DIR" ]; then
+        echo "No clients registered yet."
+        exit 0
+    fi
+
+    local clients=$(get_clients)
+    if [ -z "$clients" ]; then
+        echo "No clients registered yet."
+        exit 0
+    fi
+
+    local count=0
+    local max_len=0
+
+    # Find max client name length for formatting
+    for client in $clients; do
+        local len=${#client}
+        if [ $len -gt $max_len ]; then
+            max_len=$len
+        fi
+    done
+
+    for client in $clients; do
+        local client_file="$CLIENT_WORK_DIR/$client.md"
+
+        # Get last activity date from the file
+        local last_activity=$(grep -m1 '^### \|^## ' "$client_file" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1)
+        local current_time=$(date +%H:%M)
+
+        echo "  $client$(printf ' %.0s' $(seq 1 $((max_len - ${#client})))) - Last: $last_activity ($current_time)"
+        count=$((count + 1))
+    done
+
+    echo ""
+    echo -e "Total: ${GREEN}$count${NC} client(s)"
+}
+
+# Function to show client status
+show_status() {
+    local client_name="$1"
+
+    if [ -z "$client_name" ]; then
+        echo -e "${RED}Error: Client name required${NC}"
+        echo "Usage: client-work <client-name> status"
+        exit 1
+    fi
+
+    local client_file="$CLIENT_WORK_DIR/$client_name.md"
+    if [ ! -f "$client_file" ]; then
+        echo -e "${RED}Error: Client '$client_name' not found${NC}"
+        exit 1
+    fi
+
+    echo -e "${BLUE}Client: $client_name${NC}\n"
+
+    # Show last entry
+    local last_date=$(grep -m1 '^## ' "$client_file" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1)
+    local duration=$(grep -m2 '^## ' "$client_file" | grep 'Duration' | tail -1 | awk -F': ' '{print $2}')
+    local tasks=$(grep -m3 '^## ' "$client_file" | grep 'Tasks Completed' | tail -1)
+
+    echo "Last Entry:"
+    echo "  Date: $last_date"
+    echo "  Duration: $duration"
+    echo "  Tasks:"
+    echo "$tasks" | sed 's/  //'
+}
+
+# Main command dispatcher
+case "${1:-}" in
+    list)
+        list_clients
+        ;;
+    add-client)
+        add_client "$2" "$3"
+        ;;
+    *)
+        client_name="$1"
+        action="$2"
+
+        if [ -z "$client_name" ] || [ -z "$action" ]; then
+            echo "Usage: client-work <command> [options]"
+            echo ""
+            echo "Commands:"
+            echo "  list                                  List all registered clients"
+            echo "  add-client <name> [description]       Create a new client file"
+            echo "  <client-name> add <duration> \"desc\"   Add a daily work entry"
+            echo "  <client-name> status                  Show client status"
+            exit 1
+        fi
+
+        case "$action" in
+            add)
+                shift 2
+                add_entry "$client_name" "$1" "$2"
+                ;;
+            status)
+                show_status "$client_name"
+                ;;
+            *)
+                echo -e "${RED}Error: Unknown action '$action'${NC}"
+                echo "Available actions: add, status"
+                exit 1
+                ;;
+        esac
+        ;;
+esac
