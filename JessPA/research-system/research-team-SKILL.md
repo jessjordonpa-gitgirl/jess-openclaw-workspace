@@ -1,0 +1,2 @@
+[
+{"research_team", "Research"}, "orchestrator", "Research Orchestrator"}, {"f"}, {"fact_checker", "Fact Checker"}, {"report_author", "Report Author"}, {"source_gatherer", "Source Gatherer"}, {"task", "Research topic"}, {"depth", "light"}, {"confidence_level", "medium"}, {"cite_style", "APA"}, {"format", "markdown"}, {"save_drive", "true"}, {"project_name", "{task}_{date}"}]

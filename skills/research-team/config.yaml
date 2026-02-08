@@ -1,0 +1,127 @@
+# Research Team Configuration
+# Version: 1.0
+# Created: 2026-02-08
+
+agent_team:
+  name: "Research Team"
+  description: "Specialized multi-agent system for thorough research with fact-checking and report generation"
+  model: "openrouter/x-ai/grok-4.1-fast"  # Large context window (2M tokens)
+  timeout_seconds: 300  # 5 minute timeout per sub-agent
+  max_iterations: 3  # Number of fact-checking iterations
+
+skills:
+  research_agent:
+    name: "Research Orchestrator"
+    description: "Coordinates the research process across specialized sub-agents"
+    primary: true
+    model: "openrouter/x-ai/grok-4.1-fast"
+    memory_retention: true
+    citations_required: true
+
+  source_gatherer:
+    name: "Source Gatherer"
+    description: "Performs web searches, gathers source information, and compiles findings"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    web_search:
+      enabled: true
+      rate_limit: 2 per second  # Be respectful
+      sources_per_query: 10
+      freshness: "pw"  # Past week
+    fact_checking:
+      enabled: true
+      verify_urls: true
+      check_dates: true
+      verify_authors: true
+
+  fact_checker:
+    name: "Fact Checker"
+    description: "Validates source credibility, verifies claims, identifies bias and inconsistencies"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    verification_methods:
+      - cross_reference
+      - source_trustworthiness
+      - date_validation
+      - author_verification
+      - citation_verification
+    citation_quality:
+      min_citations: 3 per claim
+      mandatory_sources: true
+      primary_source_preference: true
+    output_format:
+      type: "markdown"
+      includes: ["verification_status", "confidence_score", "source_urls", "issues_found"]
+
+  report_author:
+    name: "Report Author"
+    description: "Synthesizes findings into highly structured reports with comprehensive citations"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    report_style:
+      type: "academic"
+      sections:
+        - Executive Summary
+        - Methodology
+        - Key Findings with Citations
+        - Cross-Reference Analysis
+        - Limitations
+        - References
+    citation_style: "APA"
+    quality_checks:
+      - citation_density
+      - source diversity
+      - claim_to_source mapping
+      - bias assessment
+
+workflow:
+  stages:
+    - stage_1: Initial Research
+      agents:
+        - source_gatherer
+      tasks:
+        - broad web search
+        - source collection
+        - preliminary fact-checking
+      output: research_findings.json
+
+    - stage_2: Deep Analysis
+      agents:
+        - source_gatherer  # Additional targeted searches
+        - fact_checker
+      tasks:
+        - source verification
+        - claim validation
+        - cross-reference analysis
+      output: verified_findings.json
+
+    - stage_3: Report Synthesis
+      agents:
+        - report_author
+        - fact_checker  # Final review
+      tasks:
+        - integrate findings
+        - structure report
+        - add citations
+        - quality assurance
+      output: final_report.md
+
+safety:
+  rate_limits:
+    max_searches_per_session: 50
+    max_research_cycles: 3
+  quality_thresholds:
+    min_fact_check_score: 0.7
+    max_source_reliability_issues: 2
+
+logging:
+  enabled: true
+  level: "info"
+  save_intermediate: true
+  save_all_sources: true
+
+output:
+  formats:
+    - markdown
+    - json
+  file_naming:
+    timestamp: true
+    session_id: true
+  file_location: "research_outputs/"

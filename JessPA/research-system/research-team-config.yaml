@@ -1,0 +1,130 @@
+# Research Team - Multi-Agent System
+# Version: 1.1 - Grok 4.1 Optimized
+# Created: February 8, 2026
+
+system:
+  name: "Research Agent Team"
+  orchestrator: "Coordinating Agent"
+  token_limit: "2M"  # Grok 4.1 Fast
+  timeout_seconds: 300
+  max_iterations: 3
+  
+agents:
+  # Research Orchestrator - Coordinates entire workflow
+  - name: "Research Orchestrator"
+    agent_id: "research-orchestrator"
+    role: "coordinates research workflow"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    focus: "task allocation, quality oversight, final synthesis"
+    token_limit: "500K"
+    
+  # Source Gatherer - Primary research agent
+  - name: "Source Gatherer"
+    agent_id: "source-gatherer"
+    role: "performs web searches and data collection"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    focus: "data collection, source extraction, metadata capture"
+    token_limit: "200K"
+    capability:
+      web_search:
+        enabled: true
+        rate_limit: 2/sec
+        sources_per_query: 12
+        freshness: "pw"  # past week
+      verification: "initial"
+      
+  # Fact Checker - Verification agent  
+  - name: "Fact Checker"
+    agent_id: "fact-checker"
+    role: "validates claims and sources"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    focus: "source credibility, claim verification, cross-reference"
+    token_limit: "200K"
+    capability:
+      source_trustworthiness: "high"
+      claim_verification: "3 sources per claim"
+      cross_reference: "enabled"
+      citation_quality: "APA format required"
+      
+  # Report Author - Synthesis agent
+  - name: "Report Author"
+    agent_id: "report-author"
+    role: "synthesizes findings into professional reports"
+    model: "openrouter/x-ai/grok-4.1-fast"
+    focus: "structuring, synthesis, quality assurance, markdown formatting"
+    token_limit: "400K"
+    capability:
+      report_sections: true
+      citation_density: "3+ per claim"
+      confidence_ratings: "required"
+      formatting: "professional markdown"
+      
+workflow:
+  phase_1:
+    name: "Initial Data Collection"
+    duration: "10-15 minutes"
+    agents: ["research-orchestrator", "source-gatherer"]
+    deliverable: "research_findings.json"
+    
+  phase_2:
+    name: "Deep Analysis & Verification" 
+    duration: "15-20 minutes"
+    agents: ["fact-checker", "source-gatherer"]
+    deliverable: "verification_report.json"
+    
+  phase_3:
+    name: "Report Synthesis"
+    duration: "10-15 minutes"
+    agents: ["report-author", "fact-checker"]
+    deliverable: "final_report.md"
+    
+output_structure:
+  project_root: "JessPA/research/{topic_date}"
+  sessions: "JessPA/research-system/sessions"
+  sources: "JessPA/research/{topic_date}/sources"
+  findings: "JessPA/research/{topic_date}/findings"
+  reports: "JessPA/research/{topic_date}/reports"
+  metadata: "JessPA/research/{topic_date}/metadata"
+  
+report_standards:
+  sections:
+    - "Executive Summary"
+    - "Methodology"
+    - "Key Findings (with inline APA citations)"
+    - "Cross-Reference Analysis"
+    - "Limitations & Caveats"
+    - "References (APA format)"
+  citation_requirements:
+    min_per_claim: 3
+    sources: ["primary", "secondary"]
+    format: "APA"
+  quality_metrics:
+    source_quality: ">0.7"
+    claim_verification: "2-3 corroboration"
+    formatting: "professional markdown"
+    confidence_ratings: "where applicable"
+
+token_management:
+  orchestrator_reserve: "20%"
+  data_agent_share: "25%"
+  verification_agent_share: "25%"
+  synthesis_agent_share: "20%"
+  overhead: "10%"
+
+safety:
+  rate_limits:
+    max_searches_per_session: 50
+    max_research_cycles: 3
+  output_limits:
+    max_report_length: "10000 words"
+    min_confidence_score: "0.7"
+
+monitoring:
+  logging: true
+  intermediate_outputs: true
+  metrics_tracking: true
+  timing_analysis: true
+
+notification:
+  drive_sync: true
+  progress_updates: "every phase complete"

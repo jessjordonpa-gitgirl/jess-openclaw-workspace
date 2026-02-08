@@ -1,0 +1,1 @@
+{"Orchestrator", "4 specialized agents", "Parallel processing", "30-45 minutes", "Multiple sources"}]
