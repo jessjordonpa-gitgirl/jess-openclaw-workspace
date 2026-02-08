@@ -1,0 +1,1 @@
+module.exports = {\n  apps: [{\n    name: 'nfl-superbowl',\n    script: 'index.js',\n    env: {\n      NODE_ENV: 'production',\n      GAME_NAME: 'Super Bowl'\n    },\n    cron_restart: '0 */1 * * *' // Restart hourly if needed\n  }]\n};
