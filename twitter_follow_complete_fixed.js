@@ -17,7 +17,7 @@ const { chromium } = require('playwright');
   });
   const page = await context.newPage();
 
-  const username = 'synthengineers';
+  const username = 'gonzofuturim';
   const password = 'Team21550u!';
 
   // Complete unique list (ERC-8004, Frameworks, Infra, Agents, LLMs, Leaders, News, Platforms + previous)
