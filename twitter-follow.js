@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
 
   // Step 2: Enter phone number
   console.log('📝 Entering phone: +44 7537 166663');
-  const usernameField = page.getByRole('textbox', { name: 'Phone, email or @username' });
+  const usernameField = page.getByTestId('LoginForm_UsernameOrEmail');
   await usernameField.fill('+44 7537 166663');
   await page.screenshot({ path: 'twitter-username.png', fullPage: true });
   console.log('✅ Screenshot: twitter-username.png');
@@ -35,7 +35,7 @@ const { chromium } = require('playwright');
 
   // Step 4: Enter password
   console.log('🔑 Entering password: Saltwater68!!');
-  const passwordField = page.getByRole('textbox', { name: 'Password' });
+  const passwordField = page.getByTestId('LoginForm_Password');
   await passwordField.fill('Saltwater68!!');
   await page.screenshot({ path: 'twitter-password.png', fullPage: true });
   console.log('✅ Screenshot: twitter-password.png');
@@ -44,11 +44,11 @@ const { chromium } = require('playwright');
   console.log('🚀 Clicking Log in');
   const loginBtn = page.getByRole('button', { name: 'Log in' });
   await loginBtn.click();
-  await page.waitForTimeout(5000); // Allow login to process
+  await page.waitForTimeout(10000); // Allow login to process, including potential 2FA
 
   // Wait for successful login (home or profile)
   try {
-    await page.waitForURL(/home|\/i\/(home|user\/)/, { timeout: 30000 });
+    await page.waitForSelector('[data-testid=\"AppTabBar_Home_Link\"]', { timeout: 30000 }); // Wait for home timeline or sidebar
     console.log('✅ Logged in successfully!');
     await page.screenshot({ path: 'twitter-logged-in.png', fullPage: true });
   } catch (e) {
@@ -104,7 +104,7 @@ const { chromium } = require('playwright');
   console.log('✅ Newly followed:', followed.join(', ') || 'None');
   console.log('ℹ️ Already following:', alreadyFollowing.join(', ') || 'None');
   console.log('❌ Errors/Skipped:', errors.join(', ') || 'None');
-  console.log('\\nBrowser remains open for verification. Close manually when done.');
+  console.log('\\n📸 Final screenshot: twitter-final.png');\n  await page.screenshot({ path: `twitter-final.png`, fullPage: true });\n\n  console.log('Browser remains open for verification. Close manually when done.');
 
   // Do not close browser automatically for verification
   // await browser.close();
