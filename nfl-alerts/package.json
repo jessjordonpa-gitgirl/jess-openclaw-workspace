@@ -1,1 +1,0 @@
-{\n  \"name\": \"nfl-score-alerts\",\n  \"version\": \"1.0.0\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"start\": \"node index.js\",\n    \"dev\": \"node --watch index.js\"\n  },\n  \"dependencies\": {\n    \"axios\": \"^1.7.2\",\n    \"node-cron\": \"^3.0.3\",\n    \"dotenv\": \"^16.4.5\"\n  }\n}
