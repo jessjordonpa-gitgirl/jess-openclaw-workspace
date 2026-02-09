@@ -2,7 +2,11 @@
   "name": "workspace",
   "version": "1.0.0",
   "description": "",
-  "main": "twitter-follow.js",
+  "main": "twitter-follow-v2.js",
+  "dependencies": {
+    "playwright": "^1.58.2",
+    "playwright-core": "^1.58.2"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,8 +20,5 @@
   "bugs": {
     "url": "https://github.com/jessjordonpa-gitgirl/jess-openclaw-workspace/issues"
   },
-  "homepage": "https://github.com/jessjordonpa-gitgirl/jess-openclaw-workspace#readme",
-  "dependencies": {
-    "playwright": "^1.58.2"
-  }
+  "homepage": "https://github.com/jessjordonpa-gitgirl/jess-openclaw-workspace#readme"
 }
