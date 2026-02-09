@@ -112,6 +112,10 @@
     "remarkable-tablet": {
       "version": "1.0.0",
       "installedAt": 1770378499682
+    },
+    "playwright-browser-automation": {
+      "version": "2.0.0",
+      "installedAt": 1770670764647
     }
   }
 }
