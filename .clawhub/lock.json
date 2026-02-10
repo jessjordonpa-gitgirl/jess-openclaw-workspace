@@ -116,6 +116,30 @@
     "playwright-browser-automation": {
       "version": "2.0.0",
       "installedAt": 1770670764647
+    },
+    "context-recovery": {
+      "version": "1.0.1",
+      "installedAt": 1770757973465
+    },
+    "topic-monitor": {
+      "version": "1.2.1",
+      "installedAt": 1770757975467
+    },
+    "clawlist": {
+      "version": "0.0.1",
+      "installedAt": 1770757977674
+    },
+    "daily-rhythm": {
+      "version": "1.0.0",
+      "installedAt": 1770757979306
+    },
+    "apple-remind-me": {
+      "version": "1.0.1",
+      "installedAt": 1770757980945
+    },
+    "skill-creator": {
+      "version": "0.1.0",
+      "installedAt": 1770757985313
     }
   }
 }
