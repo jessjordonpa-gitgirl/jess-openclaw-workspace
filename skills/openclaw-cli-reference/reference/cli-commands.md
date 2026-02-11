@@ -1,4 +1,4 @@
-🦞 OpenClaw 2026.2.9 (33c75cb) — The only bot that stays out of your training set.
+🦞 OpenClaw 2026.2.9 (33c75cb) — Chat APIs that don't require a Senate hearing.
 
 Usage: openclaw [options] [command]
 
@@ -7,9 +7,9 @@ Options:
                     gateway port 19001, and shift derived ports (browser/canvas)
   -h, --help        display help for command
   --no-color        Disable ANSI colors
-  --profile &lt;name&gt;  Use a named profile (isolates
+  --profile <name>  Use a named profile (isolates
                     OPENCLAW_STATE_DIR/OPENCLAW_CONFIG_PATH under
-                    ~/.openclaw-&lt;name&gt;)
+                    ~/.openclaw-<name>)
   -V, --version     output the version number
 
 Commands:
