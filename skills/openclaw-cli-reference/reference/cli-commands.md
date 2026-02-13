@@ -1,4 +1,5 @@
-🦞 OpenClaw 2026.2.9 (33c75cb) — Chat APIs that don't require a Senate hearing.
+
+🦞 OpenClaw 2026.2.9 (33c75cb) — WhatsApp automation without the "please accept our new privacy policy".
 
 Usage: openclaw [options] [command]
 
