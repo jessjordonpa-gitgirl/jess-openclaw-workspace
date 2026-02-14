@@ -1,5 +1,4 @@
-
-🦞 OpenClaw 2026.2.9 (33c75cb) — WhatsApp automation without the "please accept our new privacy policy".
+🦞 OpenClaw 2026.2.13 (203b5bd) — Think different. Actually think.
 
 Usage: openclaw [options] [command]
 
